@@ -40,26 +40,8 @@ jobs:
           ngrok config add-authtoken "$NGROK_AUTHTOKEN"
           nohup ngrok http 5000 --log=stdout > ngrok.log 2>&1 &
           for attempt in {1..15}; do
-            response=$(curl -s http://127.0.0.1:4040/api/tunnels || true)
-            endpoint=$(NGROK_TUNNELS_JSON="$response" python - <<'PY'
-import json
-import os
-
-raw = os.environ.get("NGROK_TUNNELS_JSON", "").strip()
-if not raw:
-    print("")
-    raise SystemExit(0)
-
-try:
-    data = json.loads(raw)
-except json.JSONDecodeError:
-    print("")
-    raise SystemExit(0)
-
-tunnels = data.get("tunnels", []) if isinstance(data, dict) else []
-print(next((t.get("public_url", "") for t in tunnels if isinstance(t, dict) and t.get("public_url")), ""))
-PY
-            )
+            endpoint=$(curl -s http://127.0.0.1:4040/api/tunnels \
+              | python -c "import json, sys; data=json.load(sys.stdin); tunnels=data.get('tunnels', []); print(tunnels[0]['public_url'] if tunnels else '')")
             if [ -n "$endpoint" ]; then
               echo "Public endpoint: $endpoint"
               break
