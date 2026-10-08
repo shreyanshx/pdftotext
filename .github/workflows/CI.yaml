@@ -3,7 +3,7 @@ name: PDF to Text CI
 on:
   push:
     branches:
-      - main
+     - #main
 
 jobs:
   build:
