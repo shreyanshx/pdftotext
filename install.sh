@@ -1,10 +1,25 @@
 #!/bin/bash
 
-set -eou pipefail
+set -euo pipefail
 
-echo "Installing Python..."
-sudo apt install -y python3 python3-venv python3-dev python3-pip
+echo "=========================================="
+echo "Installing Python"
+echo "=========================================="
 
-PYTHON_VERSION=$(python3 --version | awk '{print $2}')
-echo "Python version: $PYTHON_VERSION installed successfully."
+sudo apt-get update
 
+sudo apt-get install -y \
+    python3 \
+    python3-venv \
+    python3-dev \
+    python3-pip
+
+echo "=========================================="
+echo "Python installation completed"
+echo "=========================================="
+
+echo "Python version:"
+python3 --version
+
+echo "Pip version:"
+pip3 --version
