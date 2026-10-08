@@ -12,7 +12,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - uses: actions/checkout@v4
+
       - run: echo "Build started"
 
       - name: Install Python
-        run: install.sh
+        run: bash ./install.sh
