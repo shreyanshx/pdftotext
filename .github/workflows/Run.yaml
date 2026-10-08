@@ -1,0 +1,58 @@
+name: Stage3
+
+on:
+  workflow_run:
+    workflows: ["Stage2"]
+    types:
+      - completed
+
+jobs:
+  build:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install application dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Install ngrok CLI
+        run: |
+          curl -sSL https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.tgz \
+            | sudo tar -xzf - -C /usr/local/bin
+
+      - name: Start application
+        run: |
+          nohup python app.py > flask.log 2>&1 &
+          sleep 3
+          curl --fail http://127.0.0.1:5000
+
+      - name: Start ngrok tunnel
+        env:
+          NGROK_AUTHTOKEN: ${{ secrets.NGROK_AUTHTOKEN }}
+        run: |
+          ngrok config add-authtoken "$NGROK_AUTHTOKEN"
+          nohup ngrok http 5000 --log=stdout > ngrok.log 2>&1 &
+          for attempt in {1..15}; do
+            endpoint=$(curl -s http://127.0.0.1:4040/api/tunnels \
+              | python -c "import json, sys; data=json.load(sys.stdin); tunnels=data.get('tunnels', []); print(tunnels[0]['public_url'] if tunnels else '')")
+            if [ -n "$endpoint" ]; then
+              echo "Public endpoint: $endpoint"
+              break
+            fi
+            sleep 2
+          done
+          if [ -z "$endpoint" ]; then
+            echo "ngrok did not provide a public endpoint"
+            cat ngrok.log
+            exit 1
+          fi
+
+      - name: Keep tunnel available
+        run: sleep 21600
