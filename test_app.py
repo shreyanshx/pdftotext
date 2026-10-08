@@ -24,4 +24,4 @@ def test_non_pdf_upload_is_rejected():
     )
 
     assert response.status_code == 200
-    assert b"Only PDF files are supported." in response.data
+    assert b"Only PDF file are supported." in response.data
